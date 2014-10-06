@@ -79,7 +79,36 @@ class LeNetConvPoolLayer(object):
         #Initialize weights with random weights
         #Refer (Xavier, Bengio '10)
         W_bound = np.sqrt(6. / (fan_in + fan_out))
-        self.W = np.uniform(low = -W.bound,
+        self.W = theano.shared(np.asarray(
+                        np.uniform(
+                            low = -W.bound,
+                            high = W.bound,
+                            shape = filter_shape),
+                        dtype=theano.config.floatX,
+                        borrow=True))
+        
+        #The bias is a 1D tensor - i.e. One bias per 
+        #           output feature map
+        b_values = np.zeros((filter_shape[0],),dtype=theano.config.floatX)
+        self.b = theano.shared(value=b_values,borrow=True)
+
+        #Convolve input feature maps with filters
+        conv_out = conv.conv2d( input = input,
+                            filters = self.W,
+                            filter_shape = filter_shape,
+                            image_shape = image_shape)
+
+        #Downsample each feature map individually using maxpooling
+        pooled_out = downsample.max_pool_2d(input = conv_out,
+                                ds = poolsize,
+                                ignore_border = True)
+
+        #Add the bias term. 
+        #Since the bias term is a 1D vector, we first reshape it to
+        #       (1,n_filters,1,1)
+        #Each of bias will be thus be broadcasted across feature maps
+        #of width and height
+        self.output = T.tanh(pooled_out + self.b.dimshuffle('x',0,'x','x'))
 
 
         
