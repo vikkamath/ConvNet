@@ -107,8 +107,45 @@ class LeNetConvPoolLayer(object):
         #Since the bias term is a 1D vector, we first reshape it to
         #       (1,n_filters,1,1)
         #Each of bias will be thus be broadcasted across feature maps
-        #of width and height
         self.output = T.tanh(pooled_out + self.b.dimshuffle('x',0,'x','x'))
+        #NOTE: dimshuffle(0,'x',1) converts AxB to Ax1xB
+        #       dimshuffle(1,'x',0) converts AxB to Bx1xA
+        #   Therefore, dimshuffle('x',0,'x','x') converts Nx1 to 1xNx1x1
+
+        #Store the parameters of this layer
+        self.params = [self.W,self.b]
+
+def evaluate_lenet5(learning_rate = 0.1,
+                    n_epochs = 200,
+                    dataset = 'mnist.pkl.gz',
+                    nkerns = [20,50],
+                    batch_size = 500):
+
+    """
+    Demonstrate LeNet on MNIST
+
+    :param learning_rate : learning rate for gradient descent
+    :type learning_rate: float
+
+    :param n_epochs: Number of epochs that the optimizer runs
+    :type n_epochs: int
+
+    :param dataset: Path to the dataset being operated on
+    :type dataset: String
+
+    :param n_kerns: number of kernels on each layer
+    :type n_kerns: list of integers
+
+    :param batch_size: Size of each minibatch (for SGD)
+    :type batch_size: int
+
+    """
+
+
+
+    
+
+
 
 
         
