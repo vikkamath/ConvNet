@@ -141,6 +141,38 @@ def evaluate_lenet5(learning_rate = 0.1,
 
     """
 
+    rng = numpy.random.RandomState(1234)
+
+    datasets = load_data(dataset)
+
+    train_set_x,train_set_y = datasets[0]
+    valid_set_x,valid_set_y = datasets[1]
+    test_set_x,test_set_y = datasets[2]
+
+    #Compute number of minibatches
+    n_train_batches = train_set_x.get_value(borrow=True).shape[0] / batch_size
+    n_valid_batches = valid_set_x.get_value(borrow=True).shape[0] / batch_size 
+    n_test_batches = test_set_x.get_value(borrow=True).shape[0] / batch_size
+
+    #Allocate symbolic variables for the data
+    index = T.lscalar() #Index to a minibatch
+    x = T.matrix('x') #The data is presented as rasterized images
+    y = T.ivector('y') #The labels are presented as a 1D vector of
+                        #   integers
+
+    ishape = (28,28) #This is the size of the MNIST images
+
+    ###############
+    #-BUILD MODEL-#
+    ###############
+
+    print '.... BUILDING MODEL ....'
+
+    #Reshape matrix of rasterized images of shape (batch_size,28*28)
+    #   into a 4D tensor compatible with our LeNetConvPool Layer
+
+
+
 
 
     
