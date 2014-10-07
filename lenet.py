@@ -31,7 +31,7 @@ class LeNetConvPoolLayer(object):
     Pooling Layer of a Convolutional Network
     """
 
-    def __init__(self,rng,input,filter_shape,image_shape,poolsize=(2,2))
+    def __init__(self,rng,input,filter_shape,image_shape,poolsize=(2,2)):
         """
         Allocate a LeNet Convolutional Pooling Layer with shared internal 
             parameters
@@ -62,7 +62,7 @@ class LeNetConvPoolLayer(object):
 
         #Ensure that the number of input feature maps are consistent
         #       in both the places that they're specified
-        assert imageshape[1] == filtershape[1]
+        assert image_shape[1] == filter_shape[1]
         
         self.input = input
 
@@ -73,19 +73,19 @@ class LeNetConvPoolLayer(object):
         #Each unit in a lower layer recieves a gradient from 
         #(num_output_feature_maps * filter_height * filter_width)/
         #               pooling_size units
-        fan_out = (filter_shape[0] * np.prod(filter_shape[2:]))/
-                    np.prod(poolsize)
+        fan_out = (filter_shape[0] * np.prod(filter_shape[2:]) /
+                    np.prod(poolsize))
 
         #Initialize weights with random weights
         #Refer (Xavier, Bengio '10)
         W_bound = np.sqrt(6. / (fan_in + fan_out))
         self.W = theano.shared(np.asarray(
-                        np.uniform(
-                            low = -W.bound,
-                            high = W.bound,
-                            shape = filter_shape),
-                        dtype=theano.config.floatX,
-                        borrow=True))
+                        rng.uniform(
+                            low = -W_bound,
+                            high = W_bound,
+                            size = filter_shape),
+                        dtype=theano.config.floatX),
+                        borrow=True)
         
         #The bias is a 1D tensor - i.e. One bias per 
         #           output feature map
@@ -118,7 +118,7 @@ class LeNetConvPoolLayer(object):
 def evaluate_lenet5(learning_rate = 0.1,
                     n_epochs = 200,
                     dataset = 'mnist.pkl.gz',
-                    nkerns = [20,50],
+                    n_kerns = [20,50],
                     batch_size = 500):
 
     """
@@ -141,7 +141,7 @@ def evaluate_lenet5(learning_rate = 0.1,
 
     """
 
-    rng = numpy.random.RandomState(1234)
+    rng = np.random.RandomState(1234)
 
     datasets = load_data(dataset)
 
@@ -183,6 +183,19 @@ def evaluate_lenet5(learning_rate = 0.1,
                         input=layer0_input,
                         image_shape=(batch_size,1,28,28),
                         filter_shape=(n_kerns[0],1,5,5),
+                        poolsize = (2,2))
+
+    #Construct the second convolutional pooling layer
+    #Filtering reduces the size of the layer to :
+    #       (12-5+1,12-5+1) = (8,8)
+    #Maxpooling reduces this further to :
+    #   (8/2,8/2) = (4,4)
+    #The output, a 4D tensor is therefore of the size:
+    #       (nkerns[0],nkerns[1],4,4)
+    layer1 = LeNetConvPoolLayer(rng,
+                        input=layer0.output,
+                        image_shape=(batch_size,n_kerns[0],12,12),
+                        filter_shape=(n_kerns[1],n_kerns[0],5,5),
                         poolsize = (2,2))
     
     #The hiddenlayer being fully connected,operates on 2D matrices
@@ -296,8 +309,7 @@ def evaluate_lenet5(learning_rate = 0.1,
                 if this_validation_loss < best_validation_loss:
 
                     #Improve patience if loss improvement is good enough
-                    if this_validation_loss < best_validation_loss * \ 
-                                                improvement_threshold
+                    if this_validation_loss < best_validation_loss * improvement_threshold:
                             patience = max(patience, iter*patience_increase)
 
                     #Save the best validaiton score and iteration number
@@ -308,7 +320,26 @@ def evaluate_lenet5(learning_rate = 0.1,
                     test_losses = [test_model(i) for i in xrange(n_test_batches)]
                     test_score = np.mean(test_losses)
                     print('epoch %i, minibatch %i\%i, test error of best model %f %%' %\
-                            (
+                            (epoch, minibatch_index + 1, n_train_batches, test_score * 100.))
+
+
+            if patience <= iter:
+                done_looping = True
+                break
+
+
+    end_time = time.clock()
+
+    print('.......OPTIMIZATION COMPLETE............')
+    print('Best validation score of %f %% obtained at iteration %i,'\
+            'with test performance of %f %%' %\
+            (best_validation_loss*100,best_iter+1,test_score *100.))
+    print('code ran for %f' % (end_time - start_time))
+
+
+if __name__ == '__main__':
+    evaluate_lenet5()
+    
 
                 
     
